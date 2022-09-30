@@ -2,7 +2,6 @@ version: '3.9'
 
 x-kong-config: &kong-env
   KONG_DATABASE: postgres
-  KONG_PG_DATABASE: kong
   KONG_PG_HOST: kong-database
   KONG_PG_USER: kong
   KONG_PG_PASSWORD: kong
@@ -31,7 +30,7 @@ services:
 
   kong-gateway:
     image: kong:3.0.0-alpine
-    command: kong migrations bootstrap
+    container_name: kong-gateway
     environment:
       <<: *kong-env
       KONG_ADMIN_ACCESS_LOG: /dev/stdout
@@ -46,14 +45,7 @@ services:
       - 8443:8443
       - 127.0.0.1:8001:8001
       - 127.0.0.1:8444:8444
-    # healthcheck:
-    #   test: ["CMD", "kong", "health"]
-    #   interval: 10s
-    #   timeout: 10s
-    #   retries: 10
-    # restart: on-failure:5
-    # read_only: true
-
+      
   kong-database:
     image: postgres:14.4-alpine
     container_name: kong-database
@@ -63,11 +55,6 @@ services:
       POSTGRES_PASSWORD: kong
     ports:
      - 1000:5432
-#     healthcheck:
-#       test: ["CMD", "pg_isready", "-U", "${KONG_PG_USER:-kong}"]
-#       interval: 10s
-#       timeout: 5s
-#       retries: 3
     restart: unless-stopped
     networks:
       - kong-net
