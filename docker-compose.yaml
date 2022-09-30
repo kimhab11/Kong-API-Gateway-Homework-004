@@ -14,19 +14,38 @@ networks:
     external: false
 
 services:
-  # kong-migrations:
-  #   image: "${KONG_DOCKER_TAG:-kong:latest}"
-  #   command: kong migrations bootstrap
-  #   profiles: ["database"]
-  #   depends_on:
-  #     - db
-  #   environment:
-  #     <<: *kong-env
-  #   secrets:
-  #     - kong_postgres_password
-  #   networks:
-  #     - kong-net
-  #   restart: on-failure
+
+  kong-migration:
+    container_name: kong-migration
+    image: kong:3.0.0-alpine
+    command: "kong migrations bootstrap"
+    networks:
+      - kong-net
+    restart: on-failure
+    environment:
+      KONG_PG_HOST: kong-database
+      KONG_PG_PASSWORD: kong
+    links:
+      - kong-database
+    depends_on:
+      - kong-database
+  
+  konga:
+      image: pantsel/konga
+      container_name: konga
+      environment:
+        DB_ADAPTER: postgres
+        DB_HOST: kong-database
+        DB_DATABASE: kong
+        DB_USER: kong
+        DB_PASSWORD: kong
+        DB_PORT: 1000
+        KONGA_HOOK_TIMEOUT: 10000
+        NODE_ENV: production
+      ports:
+      - 1337:1337
+      networks:
+      - kong-net
 
   kong-gateway:
     image: kong:3.0.0-alpine
