@@ -37,20 +37,6 @@ services:
       - kong-net
     restart: on-failure
 
-  kong-migrations-up:
-    image: "${KONG_DOCKER_TAG:-kong:latest}"
-    command: kong migrations up && kong migrations finish
-    profiles: ["database"]
-    depends_on:
-      - db
-    environment:
-      <<: *kong-env
-    secrets:
-      - kong_postgres_password
-    networks:
-      - kong-net
-    restart: on-failure
-
   kong:
     image: "${KONG_DOCKER_TAG:-kong:latest}"
     user: "${KONG_USER:-kong}"
@@ -100,16 +86,16 @@ services:
     environment:
       POSTGRES_DB: kong
       POSTGRES_USER: kong
-      POSTGRES_PASSWORD: kongpass
+      POSTGRES_PASSWORD: kong
     ports:
      - 1000:5432
-    healthcheck:
-      test: ["CMD", "pg_isready", "-U", "${KONG_PG_USER:-kong}"]
-      interval: 10s
-      timeout: 5s
-      retries: 3
+#     healthcheck:
+#       test: ["CMD", "pg_isready", "-U", "${KONG_PG_USER:-kong}"]
+#       interval: 10s
+#       timeout: 5s
+#       retries: 3
     restart: unless-stopped
-    networks:
-      - kong-net
+#     networks:
+#       - kong-net
     volumes:
       - kong-database:/var/lib/postgresql/data
