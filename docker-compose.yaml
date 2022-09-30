@@ -8,7 +8,7 @@ x-kong-config: &kong-env
   KONG_PG_PASSWORD_FILE: /run/secrets/kong_postgres_password
 
 volumes:
-  kong_data: {}
+  kong-database:
   kong_prefix_vol:
     driver_opts:
      type: tmpfs
@@ -94,28 +94,22 @@ services:
     security_opt:
       - no-new-privileges
 
-  db:
-    image: postgres:9.5
-    profiles: ["database"]
+  kong-database:
+    image: postgres:14.4-alpine
+    container_name: kong-database
     environment:
-      POSTGRES_DB: ${KONG_PG_DATABASE:-kong}
-      POSTGRES_USER: ${KONG_PG_USER:-kong}
-      POSTGRES_PASSWORD_FILE: /run/secrets/kong_postgres_password
-    secrets:
-      - kong_postgres_password
+      POSTGRES_DB: kong
+      POSTGRES_USER: kong
+      POSTGRES_PASSWORD: kongpass
+    ports:
+     - 1000:5432
     healthcheck:
       test: ["CMD", "pg_isready", "-U", "${KONG_PG_USER:-kong}"]
-      interval: 30s
-      timeout: 30s
+      interval: 10s
+      timeout: 5s
       retries: 3
-    restart: on-failure
-    stdin_open: true
-    tty: true
+    restart: unless-stopped
     networks:
       - kong-net
     volumes:
-      - kong_data:/var/lib/postgresql/data
-
-secrets:
-  kong_postgres_password:
-    file: ./POSTGRES_PASSWORD
+      - kong-database:/var/lib/postgresql/data
